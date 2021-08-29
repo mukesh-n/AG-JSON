@@ -1,7 +1,7 @@
 import express from "express";
 import _, { indexOf, join, replace } from "lodash";
 let input = {
-  name: "User",
+  name: "Users",
   columns: [
     {
       name: "id",
@@ -28,7 +28,7 @@ let input = {
       type: "number",
     },
     {
-      name : "created_on",
+      name: "created_on",
       type: "date",
     },
     {
@@ -56,7 +56,7 @@ _.forEach(input.columns, (v) => {
       else property = `${v.name}:number | null = null;`;
       break;
     case "date":
-      property = `${v.name}:date | null = null;`;
+      property = `${v.name}:Date | null = null;`;
       break;
     case "boolean":
       property = `${v.name}:boolean = false;`;
@@ -70,14 +70,8 @@ _.forEach(input.columns, (v) => {
 // version_name: string | null = null;
 // req_id: number | null = null;
 
-
-
-
-
-
-
 let model_template: string = `
-  export class ${input.name} extends base{
+  export class ${input.name} extends Base{
     ${properties.join("\n")}
   }
   export class ${input.name}Wrapper extends @name{
@@ -129,9 +123,9 @@ sql_select_query = _.replace(
 
 // select method
 let select_method_template = `  public async select(
-  _req: @tablenameWrapper
-): Promise<Array<@tablenameWrapper>> {
-  var result: Array<@tablenameWrapper> = [];
+  _req: @tablename
+): Promise<Array<@tablename>> {
+  var result: Array<@tablename> = [];
   try {
     await using(this.db.getDisposablePool(), async (pool) => {
       var client = await pool.connect();
@@ -157,14 +151,14 @@ let select_method = _.replace(
 let select_transaction_template: string = `
   public async selectTransaction(
       _client: PoolClient,
-      _req: @modelnameWrapper
-    ): Promise<Array<@modelnameWrapper>> {
-      var result: Array<@modelnameWrapper> = [];
+      _req: @modelname
+    ): Promise<Array<@modelname>> {
+      var result: Array<@modelname> = [];
       try {
         var query: string = this.sql_select;
         var condition_list: Array<string> = [];
         if (_req.id > 0) {
-          condition_list.push(\`tdi.id = \${_req.id}\`);
+          condition_list.push(\`u.id = \${_req.id}\`);
         }
         if (condition_list.length > 0) {
           query = query.replace(
@@ -177,7 +171,7 @@ let select_transaction_template: string = `
         var { rows } = await _client.query(query);
         if (rows.length > 0) {
           _.forEach(rows, (v) => {
-            var temp: @modelnameWrapper = new @modelnameWrapper();
+            var temp: @modelname = new @modelname();
             @propertyassignmentlist
             result.push(temp);
           });
@@ -542,10 +536,9 @@ let entityControllerTemplate = _.replace(
 );
 // console.log(entityControllerTemplate)
 
-
 /* get controller */
 
-let get_controller_template:string = `router.post("/get", async (req, res, next) => {
+let get_controller_template: string = `router.post("/get", async (req, res, next) => {
   try {
     var result: ActionRes<Array<@tablename>> = new ActionRes<
       Array<@tablename>
@@ -556,13 +549,13 @@ let get_controller_template:string = `router.post("/get", async (req, res, next)
   } catch (error) {
     next(error);
   }
-});`
+});`;
 
 let getControllerTemplate = _.replace(
   get_controller_template,
   /@tablename/g,
   controllertablename
-)
+);
 
 // console.log(getControllerTemplate)
 // insert controller
@@ -628,7 +621,6 @@ let deleteControllerTemplate: string = _.replace(
 
 // console.log(deleteControllerTemplate)
 
-
 let controller: string = `
 const router = express.Router();
 ${entityControllerTemplate}
@@ -636,25 +628,26 @@ ${getControllerTemplate}
 ${insertControllerTemplate}
 ${updatecontrollertemplate}
 ${deleteControllerTemplate}
-`
+`;
 
-// import * as fs from 'fs';
-// import * as path from 'path';
-
-// fs.writeFile(path.join(__dirname, './src/app/modules/project/controller/user.controller1.ts'), `
-// const router = express.Router();
-// ${entityControllerTemplate}
-// ${getControllerTemplate}
-// ${insertControllerTemplate}
-// ${updatecontrollertemplate}
-// ${deleteControllerTemplate}
-// `, () => {
-//         console.log(controller)
-//     })
-// console.log(controller)
 import * as fs from 'fs';
 import * as path from 'path';
-fs.writeFile(path.join(__dirname, './src/app/modules/project/service/user.service.ts'), `
+
+fs.writeFile(path.join(__dirname, `./src/app/modules/project/controller/${input.name.toLowerCase()}.controller.ts`), `
+const router = express.Router();
+${entityControllerTemplate}
+${getControllerTemplate}
+${insertControllerTemplate}
+${updatecontrollertemplate}
+${deleteControllerTemplate}
+`, (err) => {
+        console.error(err);
+        
+    });
+
+fs.writeFile(
+  path.join(__dirname, `./src/app/modules/project/service/${input.name.toLowerCase()}.service.ts`),
+  `
 export class ${input.name}Service extends BaseService {
   ${sql_select_query}
   ${sql_insert_query}
@@ -669,30 +662,35 @@ export class ${input.name}Service extends BaseService {
   ${delete_method}
   ${delete_transaction}
 }
-`, () => {
-        console.log(service)
-    })
+`,
+  (err) => {
+    console.error(err);
+  }
+);
 
-// import * as fs from 'fs';
-// import * as path from 'path';
+fs.writeFile(
+  path.join(__dirname, `./src/app/modules/project/models/${input.name.toLowerCase()}.model.ts`),
+  `
+export class ${input.name} extends Base{
+  ${properties.join("\n")}
+}
+export class ${input.name}Wrapper extends ${input.name}{
 
-// fs.writeFile(path.join(__dirname, './src/app/modules/project/models/user.model1.ts'),`
-// export class ${input.name} extends base{
-//   ${properties.join("\n")}
-// }
-// export class ${input.name}Wrapper extends ${input.name}{
+}
+`,
+  (err) => {
+    console.log(err);
+  }
+);
 
-// }
-// `, () => {
-//         console.log(model)
-//     })
-
-
-
-
-//     import _, { cond } from "lodash";
+// import _ from "lodash";
 // import { Pool, PoolClient } from "pg";
 // import { using } from "../../../../global/utils";
-// import { User } from "../models/user.model";
+// import { Users, UserWrapper } from "../models/users.model";
 // import { BaseService } from "./base.service";
-// import {UserWrapper} from "../models/user.model"
+
+// import express from "express";
+// import { ActionRes } from "../../../../global/model/actionres.model";
+// import { Users, UsersWrapper } from "../models/users.model";
+// import { UsersService } from "../service/users.service";
+// const router = express.Router();

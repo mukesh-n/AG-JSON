@@ -24,7 +24,7 @@ export class Environment {
     this.IMAGE_FIELD = _.get(env, "IMAGE_FIELD", "");
     this.IMAGE_STORAGE = _.get(env, "IMAGE_STORAGE", "");
     this.NODE_ENV = _.get(process, "env.NODE_ENV", "development").trim();
-    this.PROJECT = _.get(process, "env.AUTH", "").trim() == "true";
+    this.PROJECT = _.get(process, "env.PROJECT", "").trim() == "true";
     this.SQL_SERVER_USER = _.get(process, "env.SQL_SERVER_USER", "").trim();
     this.SQL_SERVER_PASSWORD = _.get(
       process,

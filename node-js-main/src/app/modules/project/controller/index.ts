@@ -1,10 +1,9 @@
 import express from "express";
 import { Environment } from "../../../../global/utils";
-import { UserController } from "../controller/user.controller"
+import { UsersController } from "./users.controller"
 const router = express.Router();
 const environment = Environment.getInstance();
 
-router.use("/User", UserController);
-
+router.use("/User", UsersController);
 
 export { router as ProjectRoutes };
